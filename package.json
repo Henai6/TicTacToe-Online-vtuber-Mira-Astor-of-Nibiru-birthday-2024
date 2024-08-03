@@ -1,4 +1,11 @@
 {
+  "name": "tictactoe-online--vtuber-mira-astor-of-nibiru-birthday-2024",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Hena6",
   "dependencies": {
     "express": "^4.19.2",
     "socket.io": "^4.7.5"
