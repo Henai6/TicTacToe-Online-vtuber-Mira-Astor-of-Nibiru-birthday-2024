@@ -1,0 +1,54 @@
+body {
+    background-color: blanchedalmond;
+    width: 100%;
+}
+
+body, html { 
+    margin: 0px;
+    height:  100%;}
+
+#canvas {
+    border-style: solid;
+    width: 768px;
+    height: auto;
+}
+
+.item1 { grid-area: chat; }
+.item2 { grid-area: game; }
+
+.grid-container {
+display: grid;
+grid-template-columns: 2fr 3fr; 
+grid-template-areas: 'chat game';
+gap: 10px;
+padding: 10px;
+margin: auto;
+height:  calc(100% - 20px);
+}
+
+.grid-container > div {
+background-color: rgba(255, 255, 255, 0.8);
+text-align: center;
+padding: 20px 0;
+font-size: 30px;
+}
+
+.oneFiveContainer {
+display: grid;
+grid-template-rows: 3fr 1fr;
+grid-template-areas: 
+  'chat'
+  'rooms';
+gap: 10px;
+margin: auto;
+height: 100%;
+}
+
+#roomList {
+    list-style-type: none;
+    margin: 0px;
+    max-height: 200px; /* Adjust the max height as needed */
+    overflow-y: auto; /* Make the list scrollable */
+    background-color: gray;
+    border-radius: 10px;
+}

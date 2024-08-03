@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 8px; margin-bottom: 4px; background-color: #f1f1f1; border-radius: 4px; }
+        #messageInput { width: 100%; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Chat Room</h1>
+    <input id="roomNameInput" placeholder="Room Name" />
+    <input id="userNameInput" placeholder="Your Name" />
+    <button id="joinButton">Join Room</button>
+    <div id="status"></div>
+    <ul id="messages"></ul>
+    <input id="messageInput" placeholder="Type a message..." autocomplete="off" />
+    <button id="sendButton">Send</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('joinButton').addEventListener('click', () => {
+            const roomName = document.getElementById('roomNameInput').value;
+            const userName = document.getElementById('userNameInput').value;
+            socket.emit('joinRoom', { roomName, userName }, (response) => {
+                document.getElementById('status').textContent = response.message;
+            });
+        });
+
+        socket.on('message', (message) => {
+            const li = document.createElement('li');
+            li.textContent = message;
+            document.getElementById('messages').appendChild(li);
+        });
+
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const roomName = document.getElementById('roomNameInput').value;
+            const userName = document.getElementById('userNameInput').value;
+            const message = document.getElementById('messageInput').value;
+            socket.emit('chatMessage', { roomName, userName, message });
+            document.getElementById('messageInput').value = '';
+        });
+    </script>
+</body>
+</html>

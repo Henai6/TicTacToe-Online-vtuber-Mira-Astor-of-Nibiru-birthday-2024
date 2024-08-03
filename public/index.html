@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mira Is Bald!</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grid-container">
+  <div class="item1">
+    <div class="oneFiveContainer">
+      <flex>
+        <p>Join a Game!</p>
+        <div style="font-size: 18px;">
+        Room name: <input id="roomNameInput" placeholder="Room Name" /> &nbsp;&nbsp;&nbsp;
+        Your name: <input id="userNameInput" placeholder="Your Name" />
+        </div>
+        <div><button id="joinButton">Join Room</button></div>
+        <img src="Images/temp.png" alt="LinkToSelf" style="margin-top: 50px;">
+      </flex>
+      <div>
+        <p style="margin: 0px; margin-top: 100px;">Current game rooms:</p>
+        <ul id="roomList"></ul> 
+      </div>
+    </div>
+  </div>
+  <div class="item2">
+    <flex>
+      <p>TicTacToe (You may need to scroll)</p>
+      <div id="status"></div>
+      <div id="turn"></div>
+      <canvas width="960" height="960" id="canvas"></canvas>
+      <div id="VictoryDisplay"></div>
+      <div id="playerTurn"></div>
+      
+
+
+    </flex>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="Client.js"></script>
+<script type="module" src="code.js"></script> 
+</body>
+</html> 
