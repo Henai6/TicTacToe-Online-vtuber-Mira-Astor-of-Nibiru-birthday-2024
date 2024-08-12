@@ -21,7 +21,7 @@ export function setTurn(value) {
 }
 
 document.getElementById('joinButton').addEventListener('click', () => {
-    roomName = document.getElementById('roomNameInput').value;
+    roomName = document.getElementById('roomNameInput').value.toLowerCase().trim();
     userName = document.getElementById('userNameInput').value;
     socket.emit('joinRoom', { roomName, userName }, (response) => {
         document.getElementById('status').textContent = response.message;
@@ -50,7 +50,7 @@ socket.on('Rooms', (rooms) => {
     });
 });
 
-
+const audio = document.getElementById('myAudio');
 
 socket.on('turn', (message) => {
     //Update Board
@@ -60,4 +60,5 @@ socket.on('turn', (message) => {
     turnMessage.innerHTML = message;
     curHoverSquare = 0;
     isMyTurn = true;
+    audio.play(); 
 });

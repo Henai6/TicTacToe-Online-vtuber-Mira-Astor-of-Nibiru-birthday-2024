@@ -39,11 +39,16 @@ const leaveRooms = (socket) => {
             if (room.queue.length > 0) {
                 const nextUser = room.queue.shift();
                 room.users.push(nextUser);
-                io.to(nextUser.id).emit('joinRoom', { roomName, userName: nextUser.name }, (response) => {
+                //io.sockets.sockets.get(user.id);
+
+                /*io.to(nextUser.id).emit('joinRoom', { roomName, userName: nextUser.name }, (response) => {
                     if (response.success) {
                         io.to(roomName).emit('message', `${nextUser.name} has joined the room from the queue.`);
                     }
-                });
+                });*/
+                let joinMessage = '';
+                SetupGame(roomName, joinMessage);
+                socket.to(roomName).emit('message', joinMessage);
             }
             if (room.users.length === 0) {
                 delete rooms[roomName];
@@ -83,13 +88,33 @@ const checkWin = (board) => {
     return false;
 }
 
-// Handle new connections
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-    emitRooms();
+const SetupGame = (roomName, joinMessage) => {
+    const [user1, user2] = rooms[roomName].users;
+    let order = Math.random();
+    if (order > 0.5) {
+        joinMessage = `X - ${user1.name} VS. ${user2.name} - O`;
+        gameStatus[roomName] = {
+            player1: user1,
+            player2: user2,
+            board: Array(9).fill(0), // Example 3x3 board
+            currentTurn: user1.name
+        };
+    } else {
+        joinMessage = `X - ${user2.name} VS. ${user1.name} - O`;
+        gameStatus[roomName] = {
+            player1: user2,
+            player2: user1,
+            board: Array(9).fill(0), // Example 3x3 board
+            currentTurn: user2.name
+        };
+    }
+    io.to(gameStatus[roomName].player1.id).emit('turn', `Your turn!`);
+    io.to(gameStatus[roomName].player2.id).emit('turn', `Opponent '${gameStatus[roomName].player1.name}'s turn`);
+}
 
-    // Handle joining a room
-    socket.on('joinRoom', ({ roomName, userName }, callback) => {
+
+const joinRoom = (socket, roomName, userName, callback) => {
+    roomName = roomName.toLowerCase().trim();
         leaveRooms(socket); // Ensure the user leaves any current room before joining a new one
 
         if (!rooms[roomName]) {
@@ -105,35 +130,17 @@ io.on('connection', (socket) => {
             if (rooms[roomName].users.length < 2) {
                 joinMessage = `In room '${roomName}', waiting for players...`;
             } else {
-                const [user1, user2] = rooms[roomName].users;
-                let order = Math.random();
-                if (order > 0.5) {
-                    joinMessage = `X - ${user1.name} VS. ${user2.name} - O`;
-                    gameStatus[roomName] = {
-                        player1: user1,
-                        player2: user2,
-                        board: Array(9).fill(0), // Example 3x3 board
-                        currentTurn: user1.name
-                    };
-                } else {
-                    joinMessage = `X - ${user2.name} VS. ${user1.name} - O`;
-                    gameStatus[roomName] = {
-                        player1: user2,
-                        player2: user1,
-                        board: Array(9).fill(0), // Example 3x3 board
-                        currentTurn: user1.name
-                    };
-                }
-                io.to(gameStatus[roomName].player1.id).emit('turn', `Your turn!`);
-                io.to(gameStatus[roomName].player2.id).emit('turn', `Opponent '${gameStatus[roomName].player1.name}'s turn`);
+                SetupGame(roomName, joinMessage);
             }
 
             callback({ success: true, message: joinMessage });
             socket.to(roomName).emit('message', joinMessage);
             
         } else {
-            if (rooms.length < MAX_ROOMS_CAPACITY) {
-                rooms[roomName].queue.push({ id: socket.id, name: userName });
+            if (Object.keys(rooms).length  < MAX_ROOMS_CAPACITY) {
+                if (!rooms[roomName].queue.some(user => user.name === userName)) {
+                    rooms[roomName].queue.push({ id: socket.id, name: userName });
+                }
                 callback({ success: false, message: `Room is full. ${userName} is in the queue.` });
             } else {
                 callback({ success: false, message: `Too many rooms.` });
@@ -141,6 +148,17 @@ io.on('connection', (socket) => {
         }
 
         console.log(rooms);
+}
+
+// Handle new connections
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+    emitRooms();
+
+    // Handle joining a room
+    socket.on('joinRoom', ({ roomName, userName }, callback) => {
+        joinRoom(socket, roomName, userName, callback);
+        
     });
 
     // Handle chat messages
@@ -160,37 +178,54 @@ io.on('connection', (socket) => {
 
     socket.on('playMove', ({roomName, position, userName}, callback) => {
         let callbackStatus = false;
+        if (typeof roomName === 'undefined' || typeof userName === 'undefined' || typeof position === 'undefined' || !gameStatus[roomName]) {
+            callback({ success: callbackStatus });
+            return;
+        }
 
-        if (gameStatus[roomName].currentTurn === userName && !(position < 0 || position > 8) ) {
-            if (gameStatus[roomName].player1.name === userName)  { //If player is circle
-                if (gameStatus[roomName].board[position] === 0) {
-                    gameStatus[roomName].board[position] = 1;
+        let thisGame = gameStatus[roomName];
+        if (thisGame.currentTurn === userName && !(position < 0 || position > 8) ) {
+            if (thisGame.board[position] === 0) { //If move was valid
+                let playingPlayer = thisGame.player2;
+                let losingPlayer = thisGame.player1;
+                if (thisGame.player1.name === userName)  { //If player is circle
+                    playingPlayer = thisGame.player1;
+                    losingPlayer = thisGame.player2;
 
-                    if (checkWin(gameStatus[roomName].board)) {
-                        io.to(roomName).emit('turn', `'${gameStatus[roomName].player1.name}' WIN!`)
-                    } else {
-                        io.to(gameStatus[roomName].player2.id).emit('turn', `Your turn!`);
-                        io.to(gameStatus[roomName].player1.id).emit('turn', `Opponent '${gameStatus[roomName].player1.name}'s turn`);
-                        gameStatus[roomName].currentTurn = gameStatus[roomName].player2.name;
-                    }
-                    io.to(roomName).emit('board', gameStatus[roomName].board);
+                    thisGame.board[position] = 1;
+                }
+                else {
+                    thisGame.board[position] = 2;
+                }
+
+                if (checkWin(thisGame.board)) {
+                    io.to(roomName).emit('turn', `'${playingPlayer.name}' WIN!`);
+
+                    const loserSocket = io.sockets.sockets.get(losingPlayer.id);
                     
-                    callbackStatus = true;
-                } 
-            } else { //If player is cross
-                if (gameStatus[roomName].board[position] === 0) {
-                    gameStatus[roomName].board[position] = 2;
-                    
-                    if (checkWin(gameStatus[roomName].board)) {
-                        io.to(roomName).emit('turn', `'${gameStatus[roomName].player2.name}' WIN!`)
-                    } else {
-                        io.to(gameStatus[roomName].player1.id).emit('turn', `Your turn!`);
-                        io.to(gameStatus[roomName].player2.id).emit('turn', `Opponent '${gameStatus[roomName].player1.name}'s turn`);
-                        gameStatus[roomName].currentTurn = gameStatus[roomName].player1.name;
+                    console.log("it did run though");
+                    loserSocket.leave(roomName);
+
+                    const room = rooms[roomName];
+                    if (room.queue.length > 0) {
+                        console.log("Queue was longer");
+                        const nextUser = room.queue.shift();
+                        room.users.push(nextUser);
+                        io.to(nextUser.id).emit('joinRoom', { roomName, userName: nextUser.name }, (response) => {
+                            if (response.success) {
+                                console.log("Was succesful");
+                                io.to(roomName).emit('message', `${nextUser.name} has joined the room from the queue.`);
+                            }
+                        });
                     }
-                    io.to(roomName).emit('board', gameStatus[roomName].board);
-                    callbackStatus = true;
-                } 
+                } else {
+                    io.to(losingPlayer.id).emit('turn', `Your turn!`);
+                    io.to(playingPlayer.id).emit('turn', `Opponent '${playingPlayer.name}'s turn`);
+                    thisGame.currentTurn = losingPlayer.name;
+                }
+                io.to(roomName).emit('board', thisGame.board);
+                
+                callbackStatus = true;
             }
         }
 
@@ -203,3 +238,6 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
+module.exports = app;

@@ -195,16 +195,14 @@ function getSquareNumber(x, y) {
 });*/
 
 function playMove(number) {
-    const position = number;
+    const position = number; //This makes number be not undefined
     socket.emit('playMove', { roomName, position, userName }, (response) => {
         if (response.success) {
             //Turn changes
-            console.log("Move was accepted, ain't no way");
             setTurn(false);
         }
         else {
             //Turn did not change
-            console.log("Your yeeyeeass move was not accepted");
         }
     });
 }
@@ -214,3 +212,17 @@ socket.on('board', (board) => {
     setTicBoard(board);
     imagesLoad();
 });
+
+socket.on('reset', () => {
+    //For mira
+});
+
+//Quit room
+socket.on('disconnect', () => {
+    
+});
+
+function playAudio() { 
+    console.log("TEST");
+    x.play(); 
+} 

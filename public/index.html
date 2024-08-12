@@ -9,23 +9,47 @@
 </head>
 <body>
 
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Some text in the Modal..</p>
+  </div>
+
+</div>
+<audio id="myAudio">
+  <source src="letThemCook.wav" type="audio/wav">
+</audio>
+
 <div class="grid-container">
   <div class="item1">
-    <div class="oneFiveContainer">
-      <flex>
-        <p>Join a Game!</p>
-        <div style="font-size: 18px;">
-        Room name: <input id="roomNameInput" placeholder="Room Name" /> &nbsp;&nbsp;&nbsp;
-        Your name: <input id="userNameInput" placeholder="Your Name" />
-        </div>
-        <div><button id="joinButton">Join Room</button></div>
-        <img src="Images/temp.png" alt="LinkToSelf" style="margin-top: 50px;">
-      </flex>
-      <div>
-        <p style="margin: 0px; margin-top: 100px;">Current game rooms:</p>
-        <ul id="roomList"></ul> 
+    <flex>
+      <p>Join a Game!</p>
+      <div style="font-size: 18px;">
+      Room name: <input id="roomNameInput" placeholder="Room Name" /> &nbsp;&nbsp;&nbsp;
+      Your name: <input id="userNameInput" placeholder="Your Name" />
       </div>
-    </div>
+      <div><button id="joinButton">Join Room</button></div>
+      <img src="Images/temp.png" alt="LinkToSelf" style="margin-top: 50px;">
+      <p class="howtoplay" style="font-size: 24px;">HOW TO PLAY. Write a room name and a username above. Have someone else join the same room, or you join theirs. Then play TicTacToe on the right.</p>
+      <div>
+        <p style="margin: 0px;">Current game rooms:</p>
+        <ul id="roomList"></ul> 
+        <hr>
+      </div>
+      <div>
+        <p class="credits">Made by Henai6. Thanks to the testers:</p>
+        <ul class="credits">
+          <li>TrashGiri</li>
+          <li>KizunaAI</li>
+        </ul> 
+        <p class="credits">Thanks to Mira, for being awesome</p>
+        <p class="credits">Hosted on Alibaba Cloud / Aliyun. Code on github: <br>
+          '<a href="url">https://github.com/Henai6/TicTacToe-Online-vtuber-Mira-Astor-of-Nibiru-birthday-2024</a>'</p>
+      </div>
+    </flex>
   </div>
   <div class="item2">
     <flex>
