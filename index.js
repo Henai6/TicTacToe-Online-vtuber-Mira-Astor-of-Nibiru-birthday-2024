@@ -237,7 +237,7 @@ io.on('connection', (socket) => {
 });
 
 // Start the server on port 3000 (Change to 80 when running on Aliyun. Could setup reverse proxy, but not my pc).
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
