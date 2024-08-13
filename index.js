@@ -206,11 +206,13 @@ io.on('connection', (socket) => {
                 if (checkWin(thisGame.board) || !thisGame.board.includes(0)) {
                     socket.to(roomName).emit('turn', `'${playingPlayer.name}' WIN!`);
 
-                    let loserSocket = io.sockets.sockets.get(losingPlayer.id);
+                    
                     if (losingPlayer.name.toLowerCase().trim() === 'mira') {
-                        loserSocket = io.sockets.sockets.get(playingPlayer.id);
+                        let temp = losingPlayer;
+                        losingPlayer = playingPlayer;
+                        playingPlayer = temp;
                     }
-
+                    let loserSocket = io.sockets.sockets.get(losingPlayer.id);
                     
                     io.to(losingPlayer.id).emit('disconnectGame');
                     const nextUser = removeFromRoom(loserSocket, roomName);
