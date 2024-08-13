@@ -59,7 +59,7 @@ socket.on('turn', (message) => {
     turnMessage.innerHTML = message;
     curHoverSquare = 0;
     if (!isMyTurn) {
-        //audio.play(); 
+        audio.play(); 
     }
     isMyTurn = true;
 });
