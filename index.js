@@ -27,37 +27,39 @@ const emitRooms = () => {
     io.emit('Rooms', roomNames);
 };
 
+const removeFromRoom = (userSocket, roomName) => {
+    const room = rooms[roomName];
+    const userIndex = room.users.findIndex(user => user.id === userSocket.id);
+    let nextUser;
+    if (userIndex !== -1) {
+        const [user] = room.users.splice(userIndex, 1);
+        delete gameStatus[roomName];
+
+        userSocket.to(roomName).emit('message', `${user.name} has left the room.`);
+        userSocket.leave(roomName);
+
+        if (room.queue.length > 0) {
+            nextUser = room.queue.shift();
+            room.users.push(nextUser);
+
+            let nextSocket =  io.sockets.sockets.get(nextUser.id);
+            nextSocket.join(roomName);
+            let joinMessage = SetupGame(roomName);
+            userSocket.to(roomName).emit('message', joinMessage);
+        }
+        if (room.users.length === 0) {
+            delete rooms[roomName];
+            emitRooms(); // Emit updated list of rooms
+        }
+    }
+    return nextUser;
+}
+
 // Function to handle leaving all roms
 const leaveRooms = (socket) => {
     for (const roomName in rooms) {
         const room = rooms[roomName];
-        const userIndex = room.users.findIndex(user => user.id === socket.id);
-        if (userIndex !== -1) {
-            const [user] = room.users.splice(userIndex, 1);
-            socket.leave(roomName);
-            socket.to(roomName).emit('message', `${user.name} has left the room.`);
-            if (room.queue.length > 0) {
-                const nextUser = room.queue.shift();
-                room.users.push(nextUser);
-                //io.sockets.sockets.get(user.id);
-
-                /*io.to(nextUser.id).emit('joinRoom', { roomName, userName: nextUser.name }, (response) => {
-                    if (response.success) {
-                        io.to(roomName).emit('message', `${nextUser.name} has joined the room from the queue.`);
-                    }
-                });*/
-                let joinMessage = '';
-                SetupGame(roomName, joinMessage);
-                socket.to(roomName).emit('message', joinMessage);
-            }
-            if (room.users.length === 0) {
-                delete rooms[roomName];
-                emitRooms(); // Emit updated list of rooms
-                if (gameStatus[roomName]) {
-                    delete gameStatus[roomName];
-                }
-            }
-        }
+        removeFromRoom(socket, roomName);
     }
 };
 
@@ -88,28 +90,30 @@ const checkWin = (board) => {
     return false;
 }
 
-const SetupGame = (roomName, joinMessage) => {
+const SetupGame = (roomName) => {
     const [user1, user2] = rooms[roomName].users;
     let order = Math.random();
     if (order > 0.5) {
-        joinMessage = `X - ${user1.name} VS. ${user2.name} - O`;
+        joinMessage = `O - ${user1.name} VS. ${user2.name} - X`;
         gameStatus[roomName] = {
             player1: user1,
             player2: user2,
-            board: Array(9).fill(0), // Example 3x3 board
+            board: Array(9).fill(0), 
             currentTurn: user1.name
         };
     } else {
-        joinMessage = `X - ${user2.name} VS. ${user1.name} - O`;
+        joinMessage = `O - ${user2.name} VS. ${user1.name} - X`;
         gameStatus[roomName] = {
             player1: user2,
             player2: user1,
-            board: Array(9).fill(0), // Example 3x3 board
+            board: Array(9).fill(0), 
             currentTurn: user2.name
         };
     }
     io.to(gameStatus[roomName].player1.id).emit('turn', `Your turn!`);
     io.to(gameStatus[roomName].player2.id).emit('turn', `Opponent '${gameStatus[roomName].player1.name}'s turn`);
+    io.to(roomName).emit('board', gameStatus[roomName].board);
+    return joinMessage;
 }
 
 
@@ -130,7 +134,7 @@ const joinRoom = (socket, roomName, userName, callback) => {
             if (rooms[roomName].users.length < 2) {
                 joinMessage = `In room '${roomName}', waiting for players...`;
             } else {
-                SetupGame(roomName, joinMessage);
+                joinMessage = SetupGame(roomName);
             }
 
             callback({ success: true, message: joinMessage });
@@ -197,35 +201,34 @@ io.on('connection', (socket) => {
                 else {
                     thisGame.board[position] = 2;
                 }
+                io.to(roomName).emit('board', thisGame.board);
 
-                if (checkWin(thisGame.board)) {
-                    io.to(roomName).emit('turn', `'${playingPlayer.name}' WIN!`);
+                if (checkWin(thisGame.board) || !thisGame.board.includes(0)) {
+                    socket.to(roomName).emit('turn', `'${playingPlayer.name}' WIN!`);
 
-                    const loserSocket = io.sockets.sockets.get(losingPlayer.id);
-                    
-                    console.log("it did run though");
-                    loserSocket.leave(roomName);
-
-                    const room = rooms[roomName];
-                    if (room.queue.length > 0) {
-                        console.log("Queue was longer");
-                        const nextUser = room.queue.shift();
-                        room.users.push(nextUser);
-                        io.to(nextUser.id).emit('joinRoom', { roomName, userName: nextUser.name }, (response) => {
-                            if (response.success) {
-                                console.log("Was succesful");
-                                io.to(roomName).emit('message', `${nextUser.name} has joined the room from the queue.`);
-                            }
-                        });
+                    let loserSocket = io.sockets.sockets.get(losingPlayer.id);
+                    if (losingPlayer.name.toLowerCase().trim() === 'mira') {
+                        loserSocket = io.sockets.sockets.get(playingPlayer.id);
                     }
+
+                    
+                    io.to(losingPlayer.id).emit('disconnectGame');
+                    const nextUser = removeFromRoom(loserSocket, roomName);
+                    io.to(losingPlayer.id).emit('message', `You were ejected from the room.`);
+                    if (nextUser) {
+                        io.to(playingPlayer.id).emit('message', `${nextUser.name} has joined the room from the queue.`);
+                    } else {
+                        io.to(playingPlayer.id).emit('message', `Queue was empty`);
+                    }
+
+                    //It does succeed, but isMyTurn doesn't update from 'turn' for some reason.
+                    callbackStatus = false;
                 } else {
                     io.to(losingPlayer.id).emit('turn', `Your turn!`);
-                    io.to(playingPlayer.id).emit('turn', `Opponent '${playingPlayer.name}'s turn`);
+                    io.to(playingPlayer.id).emit('turn', `Opponent '${losingPlayer.name}'s turn`);
                     thisGame.currentTurn = losingPlayer.name;
+                    callbackStatus = true;
                 }
-                io.to(roomName).emit('board', thisGame.board);
-                
-                callbackStatus = true;
             }
         }
 
@@ -233,7 +236,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start the server on port 3000
+// Start the server on port 3000 (Change to 80 when running on Aliyun. Could setup reverse proxy, but not my pc).
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

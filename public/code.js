@@ -168,7 +168,7 @@ canvas.addEventListener('mousedown', (event) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    console.log(`Clicked at: (${x}, ${y})`);
+    //console.log(`Clicked at: (${x}, ${y})`);
     
     const squareNumber = getSquareNumber(x, y);
     if (squareNumber !== -1) {
@@ -213,16 +213,12 @@ socket.on('board', (board) => {
     imagesLoad();
 });
 
-socket.on('reset', () => {
-    //For mira
-});
-
 //Quit room
-socket.on('disconnect', () => {
-    
+socket.on('disconnectGame', () => {
+    setTurn(false);
 });
 
-function playAudio() { 
-    console.log("TEST");
-    x.play(); 
-} 
+document.getElementById('joinButton').addEventListener('click', () => {
+    setTicBoard(Array(9).fill(0));
+    imagesLoad();
+});

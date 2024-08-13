@@ -22,12 +22,11 @@ export function setTurn(value) {
 
 document.getElementById('joinButton').addEventListener('click', () => {
     roomName = document.getElementById('roomNameInput').value.toLowerCase().trim();
-    userName = document.getElementById('userNameInput').value;
+    userName = document.getElementById('userNameInput').value.trim();
     socket.emit('joinRoom', { roomName, userName }, (response) => {
         document.getElementById('status').textContent = response.message;
     });
     turnMessage.innerHTML = '';
-    ticBoard = Array(9).fill(0);
 });
 
 socket.on('message', (message) => {
@@ -59,6 +58,8 @@ socket.on('turn', (message) => {
     //Make sound?
     turnMessage.innerHTML = message;
     curHoverSquare = 0;
+    if (!isMyTurn) {
+        //audio.play(); 
+    }
     isMyTurn = true;
-    audio.play(); 
 });
