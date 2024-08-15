@@ -26,7 +26,7 @@ document.getElementById('joinButton').addEventListener('click', () => {
     socket.emit('joinRoom', { roomName, userName }, (response) => {
         document.getElementById('status').textContent = response.message;
     });
-    turnMessage.innerHTML = '';
+    turnMessage.textContent = '';
 });
 
 socket.on('message', (message) => {
@@ -39,7 +39,7 @@ const roomList = document.getElementById('roomList');
 // Listen for the 'Rooms' event from the server
 socket.on('Rooms', (rooms) => {
     // Clear the current room list
-    roomList.innerHTML = '';
+    roomList.textContent = '';
 
     // Update the room list with the received rooms
     rooms.forEach((room) => {
@@ -56,7 +56,7 @@ socket.on('turn', (message) => {
     //Enable Highlight
     //Change text color
     //Make sound?
-    turnMessage.innerHTML = message;
+    turnMessage.textContent = message;
     curHoverSquare = 0;
     if (!isMyTurn) {
         audio.play(); 
